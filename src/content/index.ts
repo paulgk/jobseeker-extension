@@ -1,23 +1,20 @@
 import type { ExtractJDMessage, ExtractionResponse } from '../shared/types'
 
 const JD_SELECTORS = [
-  '#job-details',
-  '.jobs-description',
-  '.jobs-box__html-content',
+  'div.show-more-less-html__markup',       // confirmed working Oct 2025
+  '.jobs-box__html-content',               // confirmed working 2024-2025
   '.jobs-description-content__text',
-  '.show-more-less-html__markup',
+  '#job-details',
 ]
 
 const TITLE_SELECTORS = [
   '.job-details-jobs-unified-top-card__job-title h1',
-  '.artdeco-entity-lockup__title',
-  'h1.top-card-layout__title',
+  'h1',                                    // generic fallback
 ]
 
 const COMPANY_SELECTORS = [
   '.job-details-jobs-unified-top-card__company-name a',
-  '.artdeco-entity-lockup__subtitle',
-  '.topcard__org-name-link',
+  '.jobs-unified-top-card__company-name a',
 ]
 
 function stripHtml(html: string): string {
@@ -35,7 +32,7 @@ function firstMatchText(selectors: string[], minLength = 10): string | null {
   return null
 }
 
-async function waitForJDElement(timeoutMs = 3000): Promise<Element | null> {
+async function waitForJDElement(timeoutMs = 5000): Promise<Element | null> {
   const start = Date.now()
   while (Date.now() - start < timeoutMs) {
     for (const sel of JD_SELECTORS) {
@@ -65,10 +62,10 @@ function extractFromJsonLd(): Partial<{ jobTitle: string; companyName: string; j
 }
 
 async function performExtraction(): Promise<ExtractionResponse> {
-  if (
-    !window.location.pathname.match(/\/jobs\/view\/\d+/) &&
-    !window.location.search.includes('currentJobId=')
-  ) {
+  // Handle both numeric (/jobs/view/12345) and slug (/jobs/view/job-title-12345) URL formats
+  const isJobView = /\/jobs\/view\/[^\s?]+/.test(window.location.pathname)
+  const isJobSearch = window.location.search.includes('currentJobId=')
+  if (!isJobView && !isJobSearch) {
     return { error: 'not-a-job-page' }
   }
 
