@@ -1,5 +1,6 @@
 export interface AnalysisResult {
   score: number        // 0–100 integer
+  summary: string      // 2–3 sentences: overall fit, strengths, biggest gap
   rationale: string    // one sentence, ≤25 words
   actionItems: string[] // exactly 3 strings, each ≤20 words
   keywordGaps: string[] // 3–10 short phrases
@@ -20,7 +21,7 @@ export async function analyseMatch(
     },
     body: JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
+      max_tokens: 768,
       messages: [{ role: 'user', content: buildPrompt(resumeText, jdText) }],
     }),
   })
@@ -49,6 +50,7 @@ ${jdText.slice(0, 3000)}
 Respond with ONLY a JSON object — no markdown fencing, no explanation:
 {
   "score": <integer 0-100>,
+  "summary": "<2–3 sentences: is this a strong/moderate/weak match and why, what is the candidate's biggest strength for this role, and what is the single biggest gap holding them back>",
   "rationale": "<one sentence ≤25 words explaining the score>",
   "actionItems": [
     "<sentence 1 — most impactful action ≤20 words>",
@@ -59,6 +61,7 @@ Respond with ONLY a JSON object — no markdown fencing, no explanation:
 }
 
 Scoring rubric: required skills 40%, experience level 25%, domain match 20%, education 15%.
+summary: plain language verdict a job seeker can act on — e.g. "Strong match. Your 5 years in product management aligns well. The main gap is lack of enterprise SaaS experience the JD emphasises."
 keywordGaps: 3–10 key terms from the job description absent from the resume, ordered by importance.
 actionItems: exactly 3, ordered by impact on match score, each a complete sentence.`
 }
@@ -67,6 +70,7 @@ function parseResult(text: string): AnalysisResult {
   const cleaned = text.trim().replace(/^```json\s*/, '').replace(/\s*```$/, '')
   const parsed = JSON.parse(cleaned) as {
     score: unknown
+    summary?: string
     rationale?: string
     actionItems?: string[]
     keywordGaps?: string[]
@@ -74,6 +78,7 @@ function parseResult(text: string): AnalysisResult {
   if (typeof parsed.score !== 'number') throw new Error('Invalid response shape')
   return {
     score: Math.min(100, Math.max(0, Math.round(parsed.score))),
+    summary: parsed.summary ?? '',
     rationale: parsed.rationale ?? '',
     actionItems: (parsed.actionItems ?? []).slice(0, 3),
     keywordGaps: (parsed.keywordGaps ?? []).slice(0, 8),

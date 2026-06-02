@@ -175,6 +175,12 @@ export default function App() {
               <p className="text-xs text-gray-600 mt-1">{result.rationale}</p>
             </div>
 
+            {result.summary && (
+              <div className="bg-gray-50 rounded p-3 mt-4">
+                <p className="text-sm text-gray-700 leading-relaxed">{result.summary}</p>
+              </div>
+            )}
+
             <div className="border-t border-gray-100 mt-4" />
 
             <div className="mt-3">
