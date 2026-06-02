@@ -12,7 +12,7 @@ export interface JDExtractionResult {
 }
 
 export interface ExtractionError {
-  error: 'not-a-job-page' | 'not-found' | 'timeout' | 'extraction-failed'
+  error: 'not-a-job-page' | 'not-found' | 'timeout' | 'timeout-no-fallback' | 'extraction-failed'
 }
 
 export type ExtractionResponse = JDExtractionResult | ExtractionError

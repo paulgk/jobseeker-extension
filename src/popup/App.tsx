@@ -215,6 +215,7 @@ export default function App() {
                 <>
                   <p className="text-sm font-semibold text-red-700">Could not read this job posting</p>
                   <p className="text-sm text-red-600 mt-0.5">LinkedIn may have updated their page. Try refreshing the tab, then open the popup again.</p>
+                  <p className="text-xs text-red-400 mt-1 font-mono">debug: {errorMsg}</p>
                 </>
               )}
               {errorType === 'api' && (

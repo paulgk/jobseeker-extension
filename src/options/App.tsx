@@ -50,6 +50,8 @@ export default function App() {
             Resume text
           </label>
           <textarea
+            id="resume-text"
+            name="resume-text"
             value={resumeText}
             onChange={e => setResumeText(e.target.value)}
             rows={12}
@@ -64,10 +66,13 @@ export default function App() {
           </label>
           <div className="flex gap-2">
             <input
+              id="api-key"
+              name="api-key"
               type={showKey ? 'text' : 'password'}
               value={apiKey}
               onChange={e => setApiKey(e.target.value)}
               placeholder="sk-ant-..."
+              autoComplete="off"
               className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
