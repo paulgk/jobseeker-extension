@@ -16,8 +16,10 @@ const JD_SELECTORS = [
 
 const TITLE_SELECTORS = [
   '.job-details-jobs-unified-top-card__job-title h1',
+  '.jobs-unified-top-card__job-title h1',
   '[class*="job-title"] h1',
   '[class*="top-card"] h1',
+  '[class*="unified-top-card"] h1',
   'h1',
 ]
 
@@ -26,6 +28,8 @@ const COMPANY_SELECTORS = [
   '.jobs-unified-top-card__company-name a',
   '[class*="company-name"] a',
   '[class*="company-name"]',
+  '[class*="top-card"] a[href*="/company/"]',
+  'a[href*="/company/"]',
 ]
 
 function stripHtml(html: string): string {
@@ -41,6 +45,18 @@ function firstMatchText(selectors: string[], minLength = 10): string | null {
     if (text && text.length >= minLength) return text
   }
   return null
+}
+
+// Fallback: parse "Job Title at Company | LinkedIn" from the page title
+function parseTitleFromPageTitle(): { jobTitle: string | null; companyName: string | null } {
+  const pageTitle = document.title ?? ''
+  // Format: "Job Title at Company Name | LinkedIn"
+  const match = pageTitle.match(/^(.+?)\s+at\s+(.+?)\s*\|/)
+  if (match) return { jobTitle: match[1].trim(), companyName: match[2].trim() }
+  // Format: "Job Title - Company Name | LinkedIn"
+  const match2 = pageTitle.match(/^(.+?)\s+-\s+(.+?)\s*\|/)
+  if (match2) return { jobTitle: match2[1].trim(), companyName: match2[2].trim() }
+  return { jobTitle: null, companyName: null }
 }
 
 function clickShowMore(): void {
@@ -120,9 +136,10 @@ async function performExtraction(): Promise<ExtractionResponse> {
   const ldResult = extractFromJsonLd()
 
   if (ldResult.jobTitle && ldResult.companyName && ldResult.jdText) {
+    const pageFallback = parseTitleFromPageTitle()
     return {
-      jobTitle: ldResult.jobTitle,
-      companyName: ldResult.companyName,
+      jobTitle: ldResult.jobTitle ?? pageFallback.jobTitle,
+      companyName: ldResult.companyName ?? pageFallback.companyName,
       jdText: ldResult.jdText.slice(0, 4000),
       url: window.location.href,
     }
@@ -134,9 +151,10 @@ async function performExtraction(): Promise<ExtractionResponse> {
   const jdText = (jdEl as HTMLElement).innerText.trim()
   if (jdText.length < 100) return { error: 'not-found' }
 
+  const pageFallback = parseTitleFromPageTitle()
   return {
-    jobTitle: ldResult.jobTitle ?? firstMatchText(TITLE_SELECTORS),
-    companyName: ldResult.companyName ?? firstMatchText(COMPANY_SELECTORS),
+    jobTitle: ldResult.jobTitle ?? firstMatchText(TITLE_SELECTORS) ?? pageFallback.jobTitle,
+    companyName: ldResult.companyName ?? firstMatchText(COMPANY_SELECTORS) ?? pageFallback.companyName,
     jdText: jdText.slice(0, 4000),
     url: window.location.href,
   }
