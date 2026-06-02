@@ -47,15 +47,18 @@ function firstMatchText(selectors: string[], minLength = 10): string | null {
   return null
 }
 
-// Fallback: parse "Job Title at Company | LinkedIn" from the page title
+// Fallback: parse "Job Title | Company | LinkedIn" from the page title
 function parseTitleFromPageTitle(): { jobTitle: string | null; companyName: string | null } {
   const pageTitle = document.title ?? ''
-  // Format: "Job Title at Company Name | LinkedIn"
-  const match = pageTitle.match(/^(.+?)\s+at\s+(.+?)\s*\|/)
-  if (match) return { jobTitle: match[1].trim(), companyName: match[2].trim() }
-  // Format: "Job Title - Company Name | LinkedIn"
-  const match2 = pageTitle.match(/^(.+?)\s+-\s+(.+?)\s*\|/)
-  if (match2) return { jobTitle: match2[1].trim(), companyName: match2[2].trim() }
+  // Format: "Job Title | Company Name | LinkedIn"
+  const parts = pageTitle.split('|').map(s => s.trim()).filter(Boolean)
+  if (parts.length >= 3 && parts[parts.length - 1].toLowerCase() === 'linkedin') {
+    return { jobTitle: parts[0], companyName: parts[1] }
+  }
+  // Format: "Job Title | Company Name" (no LinkedIn suffix)
+  if (parts.length >= 2) {
+    return { jobTitle: parts[0], companyName: parts[1] }
+  }
   return { jobTitle: null, companyName: null }
 }
 
